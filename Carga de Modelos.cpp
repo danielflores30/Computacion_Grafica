@@ -97,11 +97,15 @@ int main( )
     Shader shader( "Shader/modelLoading.vs", "Shader/modelLoading.frag" );
     
     // Load models
-    Model dog((char*)"Models/RedDog.obj"); //Cargamos ruta y monbre 
+    Model forest((char*)"Models/forest.obj"); //Cargamos ruta y monbre
+    Model RedDog((char*)"Models/RedDog.obj");
+    Model bee((char*)"Models/bee.obj");
+    Model sun((char*)"Models/sun.obj");
+    Model goose((char*)"Models/goose.obj");
+    Model highpoly_town_house_01((char*)"Models/highpoly_town_house_01.obj");
     glm::mat4 projection = glm::perspective( camera.GetZoom( ), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
-    
+   
   
-
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -127,19 +131,43 @@ int main( )
         // Draw the loaded model
         glm::mat4 model(1);
         glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        dog.Draw(shader);
+        forest.Draw(shader);
 
-        model = glm::translate(model, glm::vec3(3.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        dog.Draw(shader);
+        //Red Dog
 
-        //model = glm::translate(model, glm::vec3(9.0f, 0.0f, 0.0f));
-        //model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
-        //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        //dog.Draw(shader);
+        glm::mat4 modelRedDog = glm::mat4(1.0f);
+        modelRedDog = glm::translate(modelRedDog, glm::vec3(0.0f, 0.2f, 0.6f)); // Moverlo 2 unidades arriba en Y
+        modelRedDog = glm::scale(modelRedDog, glm::vec3(0.4f, 0.4f, 0.4f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelRedDog));
+        RedDog.Draw(shader);
 
+        //Bee
+        glm::mat4 modelbee = glm::mat4(1.0f);
+        modelbee = glm::translate(modelbee, glm::vec3(0.0f, 1.5f, 0.0f)); // Moverlo 2 unidades arriba en Y
+        modelbee = glm::scale(modelbee, glm::vec3(8.0f, 8.0f, 8.0f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelbee));
+        bee.Draw(shader);
 
+        //Sun
+        glm::mat4 modelsun = glm::mat4(1.0f);
+        modelsun = glm::translate(modelsun, glm::vec3(0.0f, 3.0f, 0.0f)); // Moverlo 2 unidades arriba en Y
+        modelsun = glm::scale(modelsun, glm::vec3(0.2f, 0.2f, 0.2f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelsun));
+        sun.Draw(shader);
+
+        //goose
+        glm::mat4 modelgoose = glm::mat4(1.0f);
+        modelgoose = glm::translate(modelgoose, glm::vec3(0.3f, 0.0f, 2.1f)); // Moverlo 2 unidades arriba en Y
+        modelgoose = glm::scale(modelgoose, glm::vec3(0.3f, 0.3f, 0.3f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelgoose));  
+        goose.Draw(shader);
+
+        //house
+        glm::mat4 modelhighpoly_town_house_01 = glm::mat4(1.0f);
+        modelhighpoly_town_house_01 = glm::translate(modelhighpoly_town_house_01, glm::vec3(-0.9f, 0.0f, 1.7f)); // Moverlo 2 unidades arriba en Y
+        modelhighpoly_town_house_01 = glm::scale(modelhighpoly_town_house_01, glm::vec3(0.08f, 0.08f, 0.08f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelhighpoly_town_house_01));
+        highpoly_town_house_01.Draw(shader);
         // Swap the buffers
         glfwSwapBuffers( window );
     }
