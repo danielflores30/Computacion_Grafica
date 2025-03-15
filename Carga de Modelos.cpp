@@ -1,5 +1,5 @@
-//Carga de modelos                              Daniel Escobar Flores 
-//Fecha: 09/03/2025                                         318187952
+//Práctica 06: Carga de modelos                              Daniel Escobar Flores 
+//Fecha: 14/03/2025                                         318187952
 
 // Std. Includes
 #include <string>
