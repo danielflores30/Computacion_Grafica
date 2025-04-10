@@ -41,6 +41,15 @@ GLfloat lastY = HEIGHT / 2.0;
 bool keys[1024];
 bool firstMouse = true;
 
+
+
+// ----- Sirven para recordar si ya ha ocurrido el rebote o aún no y en que ángulo empezo -----
+bool reboteActivo = false;
+float reboteInicio = 0.0f;
+float duracionRebote = 25.0f; // grados durante los cuales dura el rebote
+
+
+
 // Light attributes
 glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 bool active;  //Nos permite saber cuando se activa o se desactiva la animación 
@@ -104,10 +113,13 @@ glm::vec3 Light1 = glm::vec3(0);
 float rotBall = 0;     // Rotación para mover la pelota 
 bool AnimBall = false; // En que momento esta activa o desactiva la animación 
 
+float rotDog = 0;     // Rotación para mover el perro
+bool AnimDog = false; // En que momento esta activa o desactiva la animación 
 
 // Deltatime
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame -- Calcular deltaTime
-GLfloat lastFrame = 0.0f;  	// Time of last frame 
+GLfloat lastFrame = 0.0f;  	// Time of last frame
+ 
 
 int main()
 {
@@ -121,7 +133,7 @@ int main()
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);*/
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Animacion basica -- 05/04/2025 -- Daniel Escobar Flores", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Práctica 10 Animacion basica -- 09/04/2025 -- Daniel Escobar Flores", nullptr, nullptr);
 
 	if (nullptr == window)
 	{
@@ -274,18 +286,16 @@ int main()
 
 		glm::mat4 model(1);
 
-	
-		
 		//Carga de modelo 
         view = camera.GetViewMatrix();	
 		model = glm::mat4(1);
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Piso.Draw(lightingShader);
 
-		model = glm::mat4(1);
+		/*model = glm::mat4(1);
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		glUniform1i(glGetUniformLocation(lightingShader.Program, "transparency"), 0);
-		Dog.Draw(lightingShader);
+		Dog.Draw(lightingShader);*/
 
 		//La animación la aplicamos en la parte de la pelota 
 		model = glm::mat4(1);
@@ -293,16 +303,55 @@ int main()
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		glUniform1i(glGetUniformLocation(lightingShader.Program, "transparency"), 1);
-		//La pelota se esta viendo afectadad por la variable "rotBall" --------------------------------------------
-		model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f)); //Subimos y bajamos el centro de la pelota 
-		model = glm::rotate(model, glm::radians(rotBall), glm::vec3(1.0f, 0.0f, 0.0f)); //La afectamos en el eje Y
-		model = glm::translate(model, glm::vec3(0.0f, 0.7f, 0.0f)); //Alargamos o recortamos el radio
 
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model)); //Mandamos la info al shader
-	    Ball.Draw(lightingShader); //Dibujamos la pelota 
-		glDisable(GL_BLEND);  //Desactiva el canal alfa 
-		glBindVertexArray(0);
+		//----------------------------------------------------------------------------------------------------------------------------------------
+		// Aquí detectamos si los mismos objetos estan en el mismo punto para dar el salto -----
+		float ballAngle = fmod(rotBall, 360.0f);
+		if (ballAngle < 0.0f) ballAngle += 360.0f;
+		float dogAngle = fmod(-rotBall, 360.0f);
+		if (dogAngle < 0.0f) dogAngle += 360.0f;
+		float angleDiff = fabs(ballAngle - dogAngle);
+		if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
+		bool isCrossing = angleDiff < 3.0f; // sensibilidad del cruce
+
+		// Activamos el rebote una vez por vuelta 
+		if (isCrossing && !reboteActivo) {
+			reboteActivo = true;
+			reboteInicio = ballAngle;
+		}
+		
+		//En este bloque vamos a dar el efecto de subir y bajar
+		float bounce = 0.0f;
+		if (reboteActivo) {
+			float avance = ballAngle - reboteInicio;
+			if (avance < 0.0f) avance += 360.0f; // para evitar valores negativos
+
+			if (avance < duracionRebote) {
+				// rebote tipo seno que va y vuelve en la duración
+				float t = avance / duracionRebote; // va de 0 a 1
+				bounce = 0.8f * sin(t * glm::pi<float>()); // seno suave -- para que suba y baje
+			}
+			else {
+				reboteActivo = false; // termina el rebote
+			}
+		}
+
+		// PELOTA
+		model = glm::mat4(1.0f);
+		model = glm::rotate(model, glm::radians(rotBall), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(2.0f, 1.0f - bounce, 0.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Ball.Draw(lightingShader);
+
+		// PERRO
+		model = glm::mat4(1.0f);
+		model = glm::rotate(model, glm::radians(-rotBall), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(2.0f, -0.02f + bounce, 0.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		Dog.Draw(lightingShader);
+
 	
+		//----------------------------------------------------------------------------------------------------------------------------------------
 
 		// Also draw the lamp object, again binding the appropriate shader
 		lampShader.Use();
@@ -443,13 +492,19 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mode
 		AnimBall = !AnimBall; //Cuando tecleamos N nos cambia el valor de la variable 
 		
 	}
+	if (keys[GLFW_KEY_N])
+	{
+		AnimDog = !AnimDog; //Cuando tecleamos N nos cambia el valor de la variable 
+
+	}
 }  
+
 void Animation() {
 	//Funcion de animacion
 	//Si esta activa nos va ocasionar cambio dentro de los frames 
 	if (AnimBall)
 	{
-		rotBall += 0.2f;
+		rotBall += 0.04f;
 		//printf("%f", rotBall);
 	}
 	else
