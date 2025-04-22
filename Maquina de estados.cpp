@@ -1,3 +1,6 @@
+﻿//Práctica 11 (animación por máquina de estados)                   Escobar Flores Daniel
+//Fecha de entrega : 22 / 04 / 2025                                      318187952
+
 #include <iostream>
 #include <cmath>
 
@@ -6,7 +9,6 @@
 
 // GLFW
 #include <GLFW/glfw3.h>
-
 // Other Libs
 #include "stb_image.h"
 
@@ -17,7 +19,6 @@
 
 //Load Models
 #include "SOIL2/SOIL2.h"
-
 
 // Other includes
 #include "Shader.h"
@@ -131,7 +132,7 @@ int main()
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);*/
 
 	// Create a GLFWwindow object that we can use for GLFW's functions
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Animacion maquina de estados -- 12/04/2025 -- Daniel Escobar Flores", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Animacion maquina de estados -- 10/04/2025 -- Daniel Escobar Flores", nullptr, nullptr);
 
 	if (nullptr == window)
 	{
@@ -164,8 +165,6 @@ int main()
 	// Define the viewport dimensions
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-
-
 	Shader lightingShader("Shader/lighting.vs", "Shader/lighting.frag");
 	Shader lampShader("Shader/lamp.vs", "Shader/lamp.frag");
 	
@@ -179,8 +178,6 @@ int main()
 	Model B_LeftLeg((char*)"Models/B_LeftLegDog.obj");
 	Model Piso((char*)"Models/piso/piso.obj");
 	Model Ball((char*)"Models/ball/ball.obj");
-
-
 
 	// First, set the container's VAO (and VBO)
 	GLuint VBO, VAO;
@@ -297,15 +294,11 @@ int main()
 	
 		
 		//Carga de modelo 
-        view = camera.GetViewMatrix();	
+		view = camera.GetViewMatrix();
 		model = glm::mat4(1);
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		Piso.Draw(lightingShader);
 
-		model = glm::mat4(1);
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		glUniform1i(glGetUniformLocation(lightingShader.Program, "transparency"), 0);
-		
 		//Body
 		modelTemp= model = glm::translate(model, dogPos);
 		modelTemp= model = glm::rotate(model, glm::radians(dogRot), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -507,52 +500,134 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mode
 	}
 	
 }
+
+
+// Función principal de animación
 void Animation() {
-	if (AnimBall)
-	{
+
+	// Si la animación de la pelota está activa, hacerla rotar constantemente
+	if (AnimBall) {
 		rotBall += 0.4f;
-		//printf("%f", rotBall);
 	}
-	
-	if (AnimDog)
-	{
-		rotDog -= 0.6f;
-		//printf("%f", rotBall);
-	}
-	if (dogAnim == 1) { //animacion caminar
-		if (!step) {  //Cuando este en el estado 1 
-			RLegs += 0.1f;
-			FLegs += 0.1f;  //Que tan rapido mueve sus patitas 
-			head += 0.1f;
-			tail += 0.1f;
-			
-			if (RLegs > 15.0f) //Condici�n hasta que llegue a cierto valor 
-				step = true;
-			}
-			else
-			{
-				RLegs -= 0.1f;
-				FLegs -= 0.1f;
-				head -= 0.1f;
-				tail -= 0.1f;
-				if (RLegs<-15.0f) //Condicion para que regrese
-					step = false; 
-			}
 
-			//Agregamos un limite para que el perrito no siga avanzando 
-			if (dogPos.z < 2.3f) { //La Z es hacia la direcci�n que va el perrito 
-				dogPos.z += 0.001f;
-			}
-			else {
-				dogAnim = 0; // Detiene la animaci�n del perro
-			}
+	// Estado 1: El perro camina hacia adelante en el eje Z
+	if (dogAnim == 1) {
+		// Animación de caminar (movimiento de patas, cabeza y cola)
+		if (!step) {
+			RLegs += 0.03; FLegs += 0.03; head += 0.03; tail += 0.03;
+			if (RLegs > 15.0f) step = true;
+		}
+		else {
+			RLegs -= 0.03; FLegs -= 0.03; head -= 0.03; tail -= 0.03;
+			if (RLegs < -15.0f) step = false;
+		}
 
-		dogPos.z += 0.001;
+		// Movimiento hacia adelante en Z
+		if (dogPos.z < 2.3f)
+			dogPos.z += 0.001;
+		else
+			dogAnim = 2; // Pasar al estado de rotación
 	}
+
+	// Estado 2: El perro gira 90° hacia la derecha
+	else if (dogAnim == 2) {
+		if (rotDog < 90.0f) {
+			rotDog += 0.06f;
+			dogRot = rotDog;
+		}
+		else {
+			rotDog = dogRot = 90.0f;
+			dogAnim = 3; // Caminar en X+
+		}
+	}
+
+	// Estado 3: El perro camina hacia la derecha (eje X+)
+	else if (dogAnim == 3) {
+		if (!step) {
+			RLegs += 0.03; FLegs += 0.03; head += 0.03; tail += 0.03;
+			if (RLegs > 15.0f) step = true;
+		}
+		else {
+			RLegs -= 0.03; FLegs -= 0.03; head -= 0.03; tail -= 0.03;
+			if (RLegs < -15.0f) step = false;
+		}
+
+		if (dogPos.x < 2.3f)
+			dogPos.x += 0.001;
+		else
+			dogAnim = 4; // Siguiente rotación
+	}
+
+	// Estado 4: El perro gira hasta 180°
+	else if (dogAnim == 4) {
+		if (rotDog < 180.0f) {
+			rotDog += 0.06f;
+			dogRot = rotDog;
+		}
+		else {
+			rotDog = dogRot = 180.0f;
+			dogAnim = 5; // Caminar hacia atrás en Z
+		}
+	}
+
+	// Estado 5: El perro camina en dirección negativa Z
+	else if (dogAnim == 5) {
+		if (!step) {
+			RLegs += 0.03; FLegs += 0.03; head += 0.03; tail += 0.03;
+			if (RLegs > 15.0f) step = true;
+		}
+		else {
+			RLegs -= 0.03; FLegs -= 0.03; head -= 0.03; tail -= 0.03;
+			if (RLegs < -15.0f) step = false;
+		}
+
+		if (dogPos.z > -2.3f)
+			dogPos.z -= 0.001;
+		else
+			dogAnim = 6; // Rotar nuevamente
+	}
+
+	// Estado 6: Rotar hasta 315° (para orientarse en diagonal hacia el centro)
+	else if (dogAnim == 6) {
+		if (rotDog < 315.0f) {
+			rotDog += 0.06f;
+			dogRot = rotDog;
+		}
+		else {
+			rotDog = dogRot = 315.0f;
+			dogAnim = 7; // Ir hacia el centro
+		}
+	}
+
+	// Estado 7: Movimiento en diagonal hacia el centro (X=0, Z=0)
+	else if (dogAnim == 7) {
+		// Animación de caminata
+		if (!step) {
+			RLegs += 0.03; FLegs += 0.03; head += 0.03; tail += 0.03;
+			if (RLegs > 15.0f) step = true;
+		}
+		else {
+			RLegs -= 0.03; FLegs -= 0.03; head -= 0.03; tail -= 0.03;
+			if (RLegs < -15.0f) step = false;
+		}
+
+		// Movimiento hacia el centro en diagonal (X y Z)
+		if (dogPos.x > 0.01f || dogPos.z > 0.01f) {
+			if (dogPos.x > 0.0f) dogPos.x -= 0.001f;
+			if (dogPos.z > 0.0f) dogPos.z -= 0.001f;
+			if (dogPos.x < 0.0f) dogPos.x += 0.001f;
+			if (dogPos.z < 0.0f) dogPos.z += 0.001f;
+		}
+		else {
+			dogAnim = 8; // Estado final (llegó al centro)
+		}
+	}
+
+	// Aquí se pueden añadir más estados para otras rutas o acciones
 }
 
-void MouseCallback(GLFWwindow *window, double xPos, double yPos)
-{
+
+void MouseCallback(GLFWwindow *window, double xPos, double yPos){
 	if (firstMouse)
 	{
 		lastX = xPos;
